@@ -97,14 +97,6 @@ class MakeHeader:
         return Panel(grid, style="green on black")
 
 class MainTableHandler(logging.Handler):
-    """Custom logging handler that saves off every entry of a logger to a temporary
-    list.  As the size of the list grows to be more than half the terminal
-    height, it will pop off the first item in the list and redraw the
-    main_table. 
-
-    Args:
-        logging (Handler): modified logging handler. 
-    """	
     def __init__(self, main_table: Table, layout: Layout, log_level: str):
         super().__init__()
         self.main_table = main_table
@@ -115,9 +107,11 @@ class MainTableHandler(logging.Handler):
 
     def emit(self, record):
         record.asctime = record.asctime.split(",")[0]
-        #msg = self.format(record) #if you want just the message info switch comment lines
         msg = self.log_format % record.__dict__
-        tsize = get_terminal_size().lines // 2
+        try:
+            tsize = get_terminal_size().lines // 2
+        except OSError:
+            tsize = 20  # default value if terminal size is unavailable
         if len(self.log_list) > tsize:
             self.log_list.append(msg)
             self.log_list.pop(0)
