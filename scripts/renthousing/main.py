@@ -60,7 +60,7 @@ SOURCES = {
     "homes"     :("www.homes.com"     , homes)
 }
 
-SITES = ["redfin", "zillow", "craigs", "apartments", "homes", "realtor"]
+SITES = ["homes", "apartments", "realtor", "redfin", "zillow", "craigs"]
 
 # Define City / State / Minimum beds, Max rent, and whether you have a dog (sorry cat people.  You're on your own.  Lol)
 CITY    = "Chicago"
@@ -325,7 +325,7 @@ def main():
         if newlistings:
             support.save_data(jsondata)
             links_html = support.urlformat(newlistings)
-            support.send_housing_email(links_html)
+            # support.send_housing_email(links_html)
             logger.info(f"{len(newlistings)} new listings found.  Email sent")
             
         else:

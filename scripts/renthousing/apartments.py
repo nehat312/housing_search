@@ -21,7 +21,7 @@ def get_listings(result:BeautifulSoup, neigh:str, source:str, logger:logging, Pr
     listings = []
     listingid = price = beds = sqft = baths = pets = url = addy = current_time = extrafun = None
     #Set the outer loop over each card returned. 
-    for card in result.find_all("article"):
+    for card in result.find_all("article", class_=lambda x: x and x.startswith("placard")):
         # Time of pull
         current_time = time.strftime("%m-%d-%Y_%H-%M-%S")
 
@@ -40,13 +40,15 @@ def get_listings(result:BeautifulSoup, neigh:str, source:str, logger:logging, Pr
             continue
 
         #grab the property info
-        for search in card.find_all("div", class_="propertyDetails"):
+        for search in card.find_all("div", class_="propertyInfo"):
             #Grab price
-            for subsearch in search.find_all("div", class_="priceRange"):
+            for subsearch in search.find_all("div", class_="priceRange left"):
                 price = subsearch.text
                 if any(x.isnumeric() for x in price):
                     price = money_launderer(price.split(" ")[0])
-                    
+            #Grab address
+            for subsearch in search.find_all("div", class_="propertyAddress"):
+                addy = subsearch.text
             #Grab bed bath
             for subsearch in card.find_all("div", class_="bedRange"):
                 extrafun = subsearch.text.lower()
@@ -56,20 +58,22 @@ def get_listings(result:BeautifulSoup, neigh:str, source:str, logger:logging, Pr
                     if count < 3:
                         beds, baths, sqft = extrafun.split(",")
                         sqft = sqft.strip()
+                        sqft = float("".join(x for x in sqft if x.isnumeric()))
                     else:
                         #For if they put a comma in the square footage
                         beds, baths, sqft, extra = extrafun.split(",")
                         sqft = "".join([sqft, extra]).strip()
-                    
+                        sqft = float("".join(x for x in sqft if x.isnumeric()))
                 else:
-                    if ("beds" in extrafun) & ("baths" in extrafun):
+                    #what edge case were you trying to fix here....  ehhh.  weird code dude
+                    if ("bed" in extrafun) & ("bath" in extrafun):
                         beds, baths = extrafun.split(",")
                         #Because some toolbag didn't put the baths in 
                         #their listing.  smh.  
-                    elif "beds" in extrafun:
-                        beds = extrafun
-                    elif "baths" in extrafun:
-                        baths = extrafun
+                    elif "bed" in extrafun:
+                        beds = float(extrafun)
+                    elif "bath" in extrafun:
+                        baths = float(extrafun)
 
                 if beds:
                     if any(x.isnumeric() for x in beds):
@@ -78,12 +82,6 @@ def get_listings(result:BeautifulSoup, neigh:str, source:str, logger:logging, Pr
                     if any(x.isnumeric() for x in baths):
                         baths = float("".join(x for x in baths if x.isnumeric() or x == "."))
 
-        #grab address
-        #BUG - might want to update the below.  Janky coding
-        for search in card.find_all("a", class_="property-link"):
-            if search.get("title"):
-                addy = search.get("title")
-            
         pets = PETS
 
         listing = Propertyinfo(
